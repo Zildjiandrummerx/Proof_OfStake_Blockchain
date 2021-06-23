@@ -1,3 +1,6 @@
+from types import TracebackType
+from Crypto.Hash.SHA256 import new
+from flask_classful import FlaskView
 from block import Block
 from blockchainUtils import BlockchainUtils
 from accountModel import AccountModel
@@ -76,3 +79,31 @@ class Blockchain():
         lastBlockHash = BlockchainUtils.hash(self.blocks[-1].payload()).hexdigest()
         nextForger = self.pos.forger(lastBlockHash)
         return nextForger
+
+    def createBlock(self, transactionFromPool, forgerWallet):
+        coveredTransactions = self.getCoveredTransactionSet(transactionFromPool)
+        self.executeTransactions(coveredTransactions)
+        newBlock = forgerWallet.createBlock(coveredTransactions, BlockchainUtils.hash(self.blocks[-1].payload()).hexdigest(), len(self.blocks))
+        self.blocks.append(newBlock)
+        return newBlock
+
+    def transactionExists(self, transaction):
+        for block in self.blocks:
+            for blockTransaction in block.transactions:
+                if transaction.equals(blockTransaction):
+                    return True
+        return False
+
+    def forgerValid(self, block):
+        forgerPublicKey = self.pos.forger(block.lastHash)
+        proposedBlockFirger = block.forger
+        if forgerPublicKey == proposedBlockFirger:
+            return True
+        else:
+            return False
+
+    def transactionsValid(self, transactions):
+        coveredTransactions = self.getCoveredTransactionSet(transactions)
+        if len(coveredTransactions) == len(transactions):
+            return True
+        return False
