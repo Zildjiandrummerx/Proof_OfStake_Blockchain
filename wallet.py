@@ -10,6 +10,12 @@ class Wallet():
         # RSA's Modulo is the 2048 number needed for the keyPair
         self.keyPair = RSA.generate(2048)
 
+    def fromKey(self, file):
+        key = ''
+        with open(file, 'r') as keyfile:
+            key = RSA.import_key(keyfile.read())
+        self.keyPair = key
+
     def sign(self, data):
         dataHash = BlockchainUtils.hash(data)
         signatureSchemeObject = PKCS1_v1_5.new(self.keyPair)
